@@ -57,7 +57,7 @@ defmodule Mix.Tasks.Dockphx do
     # and app_volume_destination_path. check and fix it if needed
     values = if !String.equivalent?(values.app_name, default_base_name) do
       values
-      |> Map.replace!(:app_volume_source_path, "./#{values.app_name}")
+      |> Map.replace!(:app_volume_source_path, "./")
       |> Map.replace!(:app_volume_destination_path, "/#{values.app_name}")
     else
       values
