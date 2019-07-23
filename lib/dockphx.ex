@@ -83,7 +83,7 @@ defmodule Mix.Tasks.Dockphx do
         build: .
         ports:
           - "#{args.app_host_port}:#{args.app_container_port}"
-       volumes:
+        volumes:
           - #{args.app_volume_source_path}:#{args.app_volume_destination_path}
         depends_on:
           - db
