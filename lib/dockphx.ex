@@ -19,7 +19,13 @@ defmodule Mix.Tasks.Dockphx do
       db_volume_source_path: "./data/db",
       db_volume_destination_path: "/var/lib/postgresql/data"
     }
+    #
+    #CLEANUP change to pipeable name in cleanup branch
     reversed_arg_map_merge = &(Map.merge(default_values, &1))
+    #CLEANUP
+    #
+    pipeable_regex_replace = &(Regex.replace(&2, &1, &3))
+    pipeable_file_write = &(File.write(&2, &1))
     parsed_args = OptionParser.parse(args,
       strict: [app_name: :string,
                app_volume_source_path: :string,
@@ -68,7 +74,16 @@ defmodule Mix.Tasks.Dockphx do
     File.write("./#{values.app_name}/docker-compose.yml",
                generate_docker_compose_yml(values))
     File.write("./#{values.app_name}/Dockerfile",
-               generate_dockerfile(values))        
+               generate_dockerfile(values))
+
+    dev_exs_path = "#{values.app_name}/config/dev.exs"
+    {:ok, file} = File.open(dev_exs_path, [:utf8])
+    
+    IO.read(file, :all)
+    |> pipeable_regex_replace.(~r/password: "postgres",/, "password: \"bloo_wackadoo\",")
+    |> pipeable_regex_replace.(~r/hostname: "localhost",/, "hostname: \"#{values.db_name}\",")
+    |> pipeable_file_write.(dev_exs_path)
+
   end
 
   def verify_arg(nil), do: {:error, nil}
