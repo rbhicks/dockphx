@@ -3,6 +3,14 @@ defmodule Mix.Tasks.Dockphx do
   
   @impl Mix.Task
   def run(args) do
+    values = get_values(args)
+    
+    Mix.Task.run "phx.new", [values.app_name]
+    generate_docker_files(values)
+    update_config_dev_exs(values)
+  end
+
+  def get_values(args) do
     default_base_name = File.cwd |> elem(1) |> Path.split() |> List.last()
     default_base_path = "./"
     default_values = %{
@@ -19,13 +27,6 @@ defmodule Mix.Tasks.Dockphx do
       db_volume_source_path: "./data/db",
       db_volume_destination_path: "/var/lib/postgresql/data"
     }
-    #
-    #CLEANUP change to pipeable name in cleanup branch
-    reversed_arg_map_merge = &(Map.merge(default_values, &1))
-    #CLEANUP
-    #
-    pipeable_regex_replace = &(Regex.replace(&2, &1, &3))
-    pipeable_file_write = &(File.write(&2, &1))
     parsed_args = OptionParser.parse(args,
       strict: [app_name: :string,
                app_volume_source_path: :string,
@@ -40,10 +41,11 @@ defmodule Mix.Tasks.Dockphx do
                db_volume_source_path: :string,
                db_volume_destination_path: :string
               ])
+    pipeable_map_merge = &(Map.merge(default_values, &1))
     values = parsed_args
     |> elem(0)
     |> Enum.into(%{})
-    |> reversed_arg_map_merge.()
+    |> pipeable_map_merge.()
     
     # if we have a non-switch arg, use it to override app_name
     values = with {:ok, non_switch_name_arg} <- parsed_args
@@ -61,21 +63,26 @@ defmodule Mix.Tasks.Dockphx do
     # we could end up with a scenario where we have a non-default
     # app_name, but it doesn't get populated to app_volume_source_path,
     # and app_volume_destination_path. check and fix it if needed
-    values = if !String.equivalent?(values.app_name, default_base_name) do
+    if !String.equivalent?(values.app_name, default_base_name) do
       values
       |> Map.replace!(:app_volume_source_path, "./")
       |> Map.replace!(:app_volume_destination_path, "/#{values.app_name}")
     else
       values
     end
-    
-    Mix.Task.run "phx.new", [values.app_name]
+  end
+
+  def generate_docker_files(values) do
     File.mkdir_p("#{values.app_name}/#{values.db_volume_source_path}")
     File.write("./#{values.app_name}/docker-compose.yml",
                generate_docker_compose_yml(values))
     File.write("./#{values.app_name}/Dockerfile",
                generate_dockerfile(values))
+  end
 
+  def update_config_dev_exs(values) do
+    pipeable_regex_replace = &(Regex.replace(&2, &1, &3))
+    pipeable_file_write = &(File.write(&2, &1))
     dev_exs_path = "#{values.app_name}/config/dev.exs"
     {:ok, file} = File.open(dev_exs_path, [:utf8])
     
@@ -83,7 +90,6 @@ defmodule Mix.Tasks.Dockphx do
     |> pipeable_regex_replace.(~r/password: "postgres",/, "password: \"bloo_wackadoo\",")
     |> pipeable_regex_replace.(~r/hostname: "localhost",/, "hostname: \"#{values.db_name}\",")
     |> pipeable_file_write.(dev_exs_path)
-
   end
 
   def verify_arg(nil), do: {:error, nil}
