@@ -42,11 +42,10 @@ defmodule Mix.Tasks.Dockphx do
                db_volume_source_path: :string,
                db_volume_destination_path: :string
               ])
-    pipeable_map_merge = &(Map.merge(default_values, &1))
     values = parsed_args
     |> elem(0)
     |> Enum.into(%{})
-    |> pipeable_map_merge.()
+    |> (fn (values, default_values) -> Map.merge(default_values, values) end).(default_values)
     
     # if we have a non-switch arg, use it to override app_name
     values = with {:ok, non_switch_name_arg} <- parsed_args
@@ -82,15 +81,15 @@ defmodule Mix.Tasks.Dockphx do
   end
 
   def update_config_dev_exs(values) do
-    pipeable_regex_replace = &(Regex.replace(&2, &1, &3))
-    pipeable_file_write = &(File.write(&2, &1))
     dev_exs_path = "#{values.app_name}/config/dev.exs"
     {:ok, file} = File.open(dev_exs_path, [:utf8])
     
     IO.read(file, :all)
-    |> pipeable_regex_replace.(~r/password: "postgres",/, "password: \"bloo_wackadoo\",")
-    |> pipeable_regex_replace.(~r/hostname: "localhost",/, "hostname: \"#{values.db_name}\",")
-    |> pipeable_file_write.(dev_exs_path)
+    |> (fn (contents, regex, replace_string) ->
+      Regex.replace(regex, contents, replace_string) end).(~r/password: "postgres",/, "password: \"bloo_wackadoo\",")
+    |> (fn (contents, regex, replace_string) ->
+      Regex.replace(regex, contents, replace_string) end).(~r/hostname: "localhost",/, "hostname: \"#{values.db_name}\",")
+    |> (fn (contents, path) -> File.write(path, contents) end).(dev_exs_path)
   end
 
   def verify_arg(nil), do: {:error, nil}
