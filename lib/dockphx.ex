@@ -8,6 +8,7 @@ defmodule Mix.Tasks.Dockphx do
     Mix.Task.run "phx.new", [values.app_name]
     generate_docker_files(values)
     update_config_dev_exs(values)
+    Mix.Shell.cmd("cd #{values.app_name}; docker-compose build", [], &IO.puts(&1))
   end
 
   def get_values(args) do
