@@ -45,7 +45,7 @@ defmodule Mix.Tasks.Dockphx do
     values = parsed_args
     |> elem(0)
     |> Enum.into(%{})
-    |> (fn (values, default_values) -> Map.merge(default_values, values) end).(default_values)
+    |> (&Map.merge(default_values, &1)).()
     
     # if we have a non-switch arg, use it to override app_name
     values = with {:ok, non_switch_name_arg} <- parsed_args
@@ -85,11 +85,9 @@ defmodule Mix.Tasks.Dockphx do
     {:ok, file} = File.open(dev_exs_path, [:utf8])
     
     IO.read(file, :all)
-    |> (fn (contents, regex, replace_string) ->
-      Regex.replace(regex, contents, replace_string) end).(~r/password: "postgres",/, "password: \"bloo_wackadoo\",")
-    |> (fn (contents, regex, replace_string) ->
-      Regex.replace(regex, contents, replace_string) end).(~r/hostname: "localhost",/, "hostname: \"#{values.db_name}\",")
-    |> (fn (contents, path) -> File.write(path, contents) end).(dev_exs_path)
+    |> (&Regex.replace(~r/password: "postgres",/, &1, "password: \"bloo_wackadoo\",")).()
+    |> (&Regex.replace(~r/hostname: "localhost",/, &1, "hostname: \"#{values.db_name}\",")).()
+    |> (&File.write(dev_exs_path, &1)).()
   end
 
   def verify_arg(nil), do: {:error, nil}
