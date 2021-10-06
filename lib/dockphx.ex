@@ -7,7 +7,8 @@ defmodule Mix.Tasks.Dockphx do
     
     Mix.Task.run "phx.new", [values.app_name]
     generate_docker_files(values)
-    update_config_dev_exs(values)
+    update_config_exs(values, "dev")
+    update_config_exs(values, "test")
     Mix.Shell.cmd("cd #{values.app_name}; docker-compose build", [], &IO.puts(&1))
   end
 
@@ -80,8 +81,8 @@ defmodule Mix.Tasks.Dockphx do
                generate_dockerfile(values))
   end
 
-  def update_config_dev_exs(values) do
-    dev_exs_path = "#{values.app_name}/config/dev.exs"
+  def update_config_exs(values, config_name) do
+    dev_exs_path = "#{values.app_name}/config/#{config_name}.exs"
     {:ok, file} = File.open(dev_exs_path, [:utf8])
     
     IO.read(file, :all)
@@ -106,9 +107,10 @@ defmodule Mix.Tasks.Dockphx do
           - #{args.app_volume_source_path}:#{args.app_volume_destination_path}
         depends_on:
           - db
-        command: /bin/bash -c  'mix ecto.create; mix ecto.migrate; mix phx.server'
+        command: /bin/bash -c  'mix ecto.create && mix ecto.migrate && cd assets && npm install && cd ..'
+        #command: /bin/bash -c  'mix ecto.migrate && mix phx.server'
       #{args.db_name}:
-        image: postgres:11
+        image: postgres:13
         ports:
           - "#{args.db_host_port}:#{args.db_container_port}"
         environment:
@@ -121,7 +123,7 @@ defmodule Mix.Tasks.Dockphx do
 
   def generate_dockerfile(args) do
     """
-    FROM elixir:1.9
+    FROM elixir:1.12
 
     RUN apt-get update && apt-get install --yes postgresql-client
 
@@ -130,7 +132,7 @@ defmodule Mix.Tasks.Dockphx do
     WORKDIR $APP_HOME
 
     RUN mix local.hex --force \
-     && mix archive.install --force hex phx_new 1.4.8 \
+     && mix archive.install --force hex phx_new 1.6.0 \
      && apt-get update \
      && curl -sL https://deb.nodesource.com/setup_10.x | bash \
      && apt-get install -y apt-utils \
