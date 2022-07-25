@@ -107,10 +107,10 @@ defmodule Mix.Tasks.Dockphx do
           - #{args.app_volume_source_path}:#{args.app_volume_destination_path}
         depends_on:
           - db
-        command: /bin/bash -c  'mix ecto.create && mix ecto.migrate && cd assets && npm install && cd ..'
+        command: /bin/bash -c  'mix ecto.create && mix ecto.migrate && mix phx.server'
         #command: /bin/bash -c  'mix ecto.migrate && mix phx.server'
       #{args.db_name}:
-        image: postgres:13
+        image: postgres:14
         ports:
           - "#{args.db_host_port}:#{args.db_container_port}"
         environment:
@@ -123,7 +123,7 @@ defmodule Mix.Tasks.Dockphx do
 
   def generate_dockerfile(args) do
     """
-    FROM elixir:1.12
+    FROM elixir:1.13
 
     RUN apt-get update && apt-get install --yes postgresql-client
 
@@ -134,9 +134,7 @@ defmodule Mix.Tasks.Dockphx do
     RUN mix local.hex --force \
      && mix archive.install --force hex phx_new 1.6.0 \
      && apt-get update \
-     && curl -sL https://deb.nodesource.com/setup_10.x | bash \
      && apt-get install -y apt-utils \
-     && apt-get install -y nodejs \
      && apt-get install -y build-essential \
      && apt-get install -y inotify-tools
     """
