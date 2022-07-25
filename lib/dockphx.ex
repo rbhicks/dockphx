@@ -81,14 +81,32 @@ defmodule Mix.Tasks.Dockphx do
                generate_dockerfile(values))
   end
 
-  def update_config_exs(values, config_name) do
-    dev_exs_path = "#{values.app_name}/config/#{config_name}.exs"
-    {:ok, file} = File.open(dev_exs_path, [:utf8])
+  def update_config_exs(values, "test" = config_name) do
+    path = "#{values.app_name}/config/#{config_name}.exs"
     
-    IO.read(file, :all)
+    File.open!(path, [:utf8])
+    |> IO.read(:all)
+    |> update_config_exs_common(path, values)
+  end
+  
+  def update_config_exs(values, "dev" = config_name) do
+    path = "#{values.app_name}/config/#{config_name}.exs"
+    
+    File.open!(path, [:utf8])
+    |> IO.read(:all)
+    |> (&Regex.replace(~r/http: \[ip: {127, 0, 0, 1},/, &1, "http: [ip: {0, 0, 0, 0},")).()
+    |> update_config_exs_common(path, values)
+  end
+  
+  def update_config_exs_common(content, path, values) do
+    content
     |> (&Regex.replace(~r/password: "postgres",/, &1, "password: \"bloo_wackadoo\",")).()
     |> (&Regex.replace(~r/hostname: "localhost",/, &1, "hostname: \"#{values.db_name}\",")).()
-    |> (&File.write(dev_exs_path, &1)).()
+    |> write_config_file(path)
+  end
+
+  def write_config_file(content, path) do    
+    File.write!(path, content)
   end
 
   def verify_arg(nil), do: {:error, nil}
