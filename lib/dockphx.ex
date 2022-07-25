@@ -123,7 +123,7 @@ defmodule Mix.Tasks.Dockphx do
 
   def generate_dockerfile(args) do
     """
-    FROM elixir:OTP-25
+    FROM elixir:otp-25
 
     RUN apt-get update && apt-get install --yes postgresql-client
 
