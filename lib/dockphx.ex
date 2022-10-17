@@ -25,7 +25,7 @@ defmodule Mix.Tasks.Dockphx do
       db_host_port: 5432,
       db_container_port: 5432,
       db_user: "postgres",
-      db_password: "bloo_wackadoo",
+      db_password: "postgres",
       db_volume_source_path: "./data/db",
       db_volume_destination_path: "/var/lib/postgresql/data"
     }
