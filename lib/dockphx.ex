@@ -30,7 +30,8 @@ defmodule Mix.Tasks.Dockphx do
       db_volume_source_path: "./data/db",
       db_volume_destination_path: "/var/lib/postgresql/data",
       image_elixir: "elixir:otp-25",
-      image_postgres: "postgres:15"
+      image_postgres: "postgres:15",
+      phoenix_version: "1.7.2"
     }
 
     parsed_args =
@@ -47,7 +48,10 @@ defmodule Mix.Tasks.Dockphx do
           db_password: :string,
           db_user: :string,
           db_volume_source_path: :string,
-          db_volume_destination_path: :string
+          db_volume_destination_path: :string,
+          image_elixir: :string,
+          image_postgres: :string,
+          phoenix_version: :string
         ]
       )
 
@@ -167,7 +171,7 @@ defmodule Mix.Tasks.Dockphx do
     WORKDIR $APP_HOME
 
     RUN mix local.hex --force \
-     && mix archive.install --force hex phx_new 1.6.0 \
+     && mix archive.install --force hex phx_new #{args.phoenix_version} \
      && apt-get update \
      && apt-get install -y apt-utils \
      && apt-get install -y build-essential \
