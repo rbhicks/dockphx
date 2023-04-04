@@ -27,7 +27,9 @@ defmodule Mix.Tasks.Dockphx do
       db_user: "postgres",
       db_password: "postgres",
       db_volume_source_path: "./data/db",
-      db_volume_destination_path: "/var/lib/postgresql/data"
+      db_volume_destination_path: "/var/lib/postgresql/data",
+      image_elixir: "elixir:otp-25",
+      image_postgres: "postgres:15"
     }
     parsed_args = OptionParser.parse(args,
       strict: [app_name: :string,
@@ -43,10 +45,28 @@ defmodule Mix.Tasks.Dockphx do
                db_volume_source_path: :string,
                db_volume_destination_path: :string
               ])
-    values = parsed_args
-    |> elem(0)
+
+    {_, positional_args, parsed_options} = parsed_args
+
+    # Convert the positional_args list into a map
+    positional_args_map = %{
+      app_name: Enum.at(positional_args, 0),
+      app_host_port: Enum.at(positional_args, 1) && String.to_integer(Enum.at(positional_args, 1)),
+      db_host_port: Enum.at(positional_args, 2) && String.to_integer(Enum.at(positional_args, 2)),
+      db_password: Enum.at(positional_args, 3)
+    }
+
+    # Convert the parsed_options list into a map
+    parsed_options_map = parsed_options
+    |> Enum.map(fn {k, v} -> {String.to_atom(String.trim_leading(k, "-")), v} end)
+    |> Enum.reject(fn {_k, v} -> v == nil end)
     |> Enum.into(%{})
-    |> (&Map.merge(default_values, &1)).()
+
+    # Merge the maps with precedence given to the parsed values
+    values = Map.merge(default_values, positional_args_map)
+    |> Map.merge(parsed_options_map)
+    |> Enum.reject(fn {_k, v} -> v == nil end)
+    |> Enum.into(%{})
     
     # if we have a non-switch arg, use it to override app_name
     values = with {:ok, non_switch_name_arg} <- parsed_args
@@ -108,9 +128,8 @@ defmodule Mix.Tasks.Dockphx do
         depends_on:
           - db
         command: /bin/bash -c  'mix ecto.create && mix ecto.migrate && mix phx.server'
-        #command: /bin/bash -c  'mix ecto.migrate && mix phx.server'
       #{args.db_name}:
-        image: postgres:14
+        image: #{args.image_postgres}
         ports:
           - "#{args.db_host_port}:#{args.db_container_port}"
         environment:
@@ -123,7 +142,7 @@ defmodule Mix.Tasks.Dockphx do
 
   def generate_dockerfile(args) do
     """
-    FROM elixir:otp-25
+    FROM #{args.image_elixir}
 
     RUN apt-get update && apt-get install --yes postgresql-client
 
