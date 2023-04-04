@@ -122,7 +122,7 @@ defmodule Mix.Tasks.Dockphx do
     {:ok, file} = File.open(dev_exs_path, [:utf8])
 
     IO.read(file, :all)
-    |> (&Regex.replace(~r/password: "postgres",/, &1, "password: \"bloo_wackadoo\",")).()
+    |> (&Regex.replace(~r/password: "postgres",/, &1, "password: \"postgres\",")).()
     |> (&Regex.replace(~r/hostname: "localhost",/, &1, "hostname: \"#{values.db_name}\",")).()
     |> (&File.write(dev_exs_path, &1)).()
   end
