@@ -29,7 +29,7 @@ defmodule Mix.Tasks.Dockphx do
       db_password: "postgres",
       db_volume_source_path: "./data/db",
       db_volume_destination_path: "/var/lib/postgresql/data",
-      image_elixir: "elixir:otp-25",
+      image_elixir: "elixir:otp-26",
       image_postgres: "postgres:15"
     }
 
