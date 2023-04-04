@@ -3,10 +3,14 @@ defmodule Mix.Test.DockphxTest do
 
   test "run Dockphx task and check generated files content" do
     options = [
-      "--app_name", "test_app",
-      "--app_host_port", "4001",
-      "--db_host_port", "5433",
-      "--db_password", "postgres_password"
+      "--app_name",
+      "test_app",
+      "--app_host_port",
+      "4001",
+      "--db_host_port",
+      "5433",
+      "--db_password",
+      "postgres_password"
     ]
 
     on_exit(fn ->
@@ -18,6 +22,7 @@ defmodule Mix.Test.DockphxTest do
     assert File.exists?("test_app/Dockerfile")
 
     docker_compose_content = File.read!("test_app/docker-compose.yml")
+
     expected_docker_compose = """
     version: '3'
     services:
@@ -43,6 +48,7 @@ defmodule Mix.Test.DockphxTest do
     """
 
     dockerfile_content = File.read!("test_app/Dockerfile")
+
     expected_dockerfile = """
     FROM elixir:otp-25
 
