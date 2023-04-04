@@ -59,7 +59,7 @@ defmodule Mix.Test.DockphxTest do
     WORKDIR $APP_HOME
 
     RUN mix local.hex --force \
-     && mix archive.install --force hex phx_new 1.6.0 \
+     && mix archive.install --force hex phx_new 1.7.2 \
      && apt-get update \
      && apt-get install -y apt-utils \
      && apt-get install -y build-essential \
