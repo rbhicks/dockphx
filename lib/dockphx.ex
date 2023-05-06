@@ -4,22 +4,15 @@ defmodule Mix.Tasks.Dockphx do
   @impl Mix.Task
   def run(args) do
     values = get_values(args)
-
-    Mix.Task.run("phx.new", [values.app_name])
+    Mix.Task.run("phx.new", [values.app_name] ++ values.phx_new_options)
     generate_docker_files(values)
     update_config_exs(values, "dev")
     update_config_exs(values, "test")
     Mix.Shell.cmd("cd #{values.app_name}; docker-compose build", [], &IO.puts(&1))
   end
-
-  def get_values(args) do
-    default_base_name = File.cwd() |> elem(1) |> Path.split() |> List.last()
-    default_base_path = "./"
-
+  
+  def get_values(args) do    
     default_values = %{
-      app_name: "#{default_base_name}",
-      app_volume_source_path: "#{default_base_path}",
-      app_volume_destination_path: "/#{default_base_name}",
       app_host_port: 4000,
       app_container_port: 4000,
       db_name: "db",
@@ -29,12 +22,12 @@ defmodule Mix.Tasks.Dockphx do
       db_password: "postgres",
       db_volume_source_path: "./data/db",
       db_volume_destination_path: "/var/lib/postgresql/data",
-      image_elixir: "elixir:otp-25",
+      image_elixir: "elixir:latest",
       image_postgres: "postgres:15",
       phoenix_version: "1.7.2"
     }
 
-    parsed_args =
+    {switch_options_kw_list, postitional_options, unexpected_options} =
       OptionParser.parse(args,
         strict: [
           app_name: :string,
@@ -55,56 +48,22 @@ defmodule Mix.Tasks.Dockphx do
         ]
       )
 
-    {_, positional_args, parsed_options} = parsed_args
-
-    # Convert the positional_args list into a map
-    positional_args_map = %{
-      app_name: Enum.at(positional_args, 0),
-      app_host_port:
-        Enum.at(positional_args, 1) && String.to_integer(Enum.at(positional_args, 1)),
-      db_host_port: Enum.at(positional_args, 2) && String.to_integer(Enum.at(positional_args, 2)),
-      db_password: Enum.at(positional_args, 3)
-    }
+    switch_options = switch_options_kw_list |> Enum.into(%{})
+    phoenix_new_options = unexpected_options |> Enum.map(fn (tuple) -> elem(tuple, 0) end)
+    app_name = postitional_options |> hd
+    default_base_name = app_name
+    default_base_path = "./"
 
     # Convert the parsed_options list into a map
-    parsed_options_map =
-      parsed_options
-      |> Enum.map(fn {k, v} -> {String.to_atom(String.trim_leading(k, "-")), v} end)
-      |> Enum.reject(fn {_k, v} -> v == nil end)
-      |> Enum.into(%{})
-
+    options =
+      switch_options
+      |> Map.put(:app_volume_source_path, "#{default_base_path}#{default_base_name}")
+      |> Map.put(:app_volume_destination_path, "/#{default_base_name}")
+      |> Map.put(:app_name, app_name)
+      |> Map.put(:phx_new_options, phoenix_new_options)
+    
     # Merge the maps with precedence given to the parsed values
-    values =
-      Map.merge(default_values, positional_args_map)
-      |> Map.merge(parsed_options_map)
-      |> Enum.reject(fn {_k, v} -> v == nil end)
-      |> Enum.into(%{})
-
-    # if we have a non-switch arg, use it to override app_name
-    values =
-      with {:ok, non_switch_name_arg} <-
-             parsed_args
-             |> elem(1)
-             |> List.first()
-             |> verify_arg() do
-        values
-        |> Map.replace!(:app_name, non_switch_name_arg)
-        |> Map.replace!(:app_volume_source_path, "./#{non_switch_name_arg}")
-        |> Map.replace!(:app_volume_destination_path, "/#{non_switch_name_arg}")
-      else
-        {:error, nil} -> values
-      end
-
-    # we could end up with a scenario where we have a non-default
-    # app_name, but it doesn't get populated to app_volume_source_path,
-    # and app_volume_destination_path. check and fix it if needed
-    if !String.equivalent?(values.app_name, default_base_name) do
-      values
-      |> Map.replace!(:app_volume_source_path, "./")
-      |> Map.replace!(:app_volume_destination_path, "/#{values.app_name}")
-    else
-      values
-    end
+    Map.merge(default_values, options)
   end
 
   def generate_docker_files(values) do
