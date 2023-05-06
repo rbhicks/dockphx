@@ -57,7 +57,7 @@ defmodule Mix.Tasks.Dockphx do
     # Convert the parsed_options list into a map
     options =
       switch_options
-      |> Map.put(:app_volume_source_path, "#{default_base_path}#{default_base_name}")
+      |> Map.put(:app_volume_source_path, "#{default_base_path}")
       |> Map.put(:app_volume_destination_path, "/#{default_base_name}")
       |> Map.put(:app_name, app_name)
       |> Map.put(:phx_new_options, phoenix_new_options)
