@@ -1,5 +1,19 @@
 # Dockphx Mix Task
 
+## Elixir Custom Mix Task automatic Docker Support for new Phoenix Apps
+
+This Elixir code provides a custom Mix task that automates the process of creating a new Phoenix project and generating necessary Docker files. It handles command-line options to configure the application and Docker settings, making it easier to set up a development environment. The task generates a Docker Compose configuration and builds the application using Docker.
+
+### Features
+
+- Automatically generates a new Phoenix project with specified options
+- Creates Dockerfiles and docker-compose.yml for the Elixir and PostgreSQL services
+- Configures application settings, such as ports, database name, and volume paths
+- Supports customizing the Elixir and PostgreSQL images used for the containers
+- Allows specifying a specific Phoenix version for the project
+
+
+
 Dockphx is a custom Mix task for Elixir that automatically generates Docker and docker-compose files for your Phoenix applications. This task simplifies the process of setting up a new Phoenix project with Docker by creating the necessary files and configurations for you. It also updates the `config/dev.exs` and `config/test.exs` files with the proper hostname and password for the database connection.
 
 ## Installation
@@ -18,40 +32,36 @@ cd dockphx
 
 4. You should now have the `Dockphx` Mix task installed and available for use in your Elixir projects.
 
-## Usage
+### Usage
 
-To use the `Dockphx` Mix task, run the following command:
+To use this custom Mix task, run the following command with the desired options:
 
-`mix dockphx [app_name] [options]`
+`mix dockphx APP_NAME [OPTIONS]`
 
-### Arguments
 
-- `app_name`: The name of your Phoenix application. This can be provided as the first argument without using the `--app_name` switch.
+#### Options
 
-### Options
-
-The following options can be provided to the `mix dockphx` command:
-
-- `--app_volume_source_path`: The source path for the application volume in the Docker container.
-- `--app_volume_destination_path`: The destination path for the application volume in the Docker container.
-- `--app_host_port`: The host port for your Phoenix application.
-- `--app_container_port`: The container port for your Phoenix application.
-- `--db_name`: The name of the database container.
-- `--db_host_port`: The host port for the PostgreSQL database.
-- `--db_container_port`: The container port for the PostgreSQL database.
-- `--db_user`: The PostgreSQL user.
-- `--db_password`: The PostgreSQL password.
-- `--db_volume_source_path`: The source path for the database volume in the Docker container.
-- `--db_volume_destination_path`: The destination path for the database volume in the Docker container.
-
-If you don't provide any options, the Mix task will use the default values specified in the code.
+- `--app_name`: The name of the application to be created
+- `--app_volume_source_path`: The source path for the application volume
+- `--app_volume_destination_path`: The destination path for the application volume
+- `--app_host_port`: The host port for the application
+- `--app_container_port`: The container port for the application
+- `--db_name`: The name of the PostgreSQL database
+- `--db_host_port`: The host port for the PostgreSQL service
+- `--db_container_port`: The container port for the PostgreSQL service
+- `--db_password`: The password for the PostgreSQL user
+- `--db_user`: The username for the PostgreSQL user
+- `--db_volume_source_path`: The source path for the PostgreSQL volume
+- `--db_volume_destination_path`: The destination path for the PostgreSQL volume
+- `--image_elixir`: The Elixir Docker image to use
+- `--image_postgres`: The PostgreSQL Docker image to use
+- `--phoenix_version`: The Phoenix version to use for the project
 
 ### Example
 
-`mix dockphx phoenix_app --app_host_port 4001 --db_host_port 5433 --db_password postgres_password`
+To create a new Phoenix project named "China Lake" with custom settings, run the following command:
 
-This command will create a new Phoenix application called `phoenix_app` with the specified options, generate the Docker and docker-compose files, and build the Docker container.
-
+`mix dockphx china_lake --app_host_port 4001 --app_container_port 4001 --db_name my_db --db_password my_password --phoenix_version 1.7.2`
 
 ## License
 
